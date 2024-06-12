@@ -1,7 +1,7 @@
 // import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
-import { __dirname } from '../eslint.config';
+import { __dirname } from '../eslint.config.js';
 
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);

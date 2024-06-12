@@ -2,7 +2,8 @@ import nock from 'nock';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { pageLoader } from '../src/pageLoader.js';
+// import { beforeEach } from 'jest';
+import pageLoader from '../src/pageLoader.js';
 import { readTestFile } from './utils.js';
 
 nock.disableNetConnect();
