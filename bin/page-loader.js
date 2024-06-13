@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 import { Command } from 'commander';
-import { pageLoader } from '../src/pageLoader.js';
+import pageLoader from '../src/pageLoader.js';
 
 const program = new Command();
 

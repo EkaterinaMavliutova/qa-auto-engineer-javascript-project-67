@@ -6,5 +6,8 @@ import { __dirname } from '../eslint.config.js';
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
-export const getFixturePath = (fileName) => path.join(__dirname, '..', '__fixtures__', fileName);
+export const getFixturePath = (fileName) => path.join(__dirname, '__fixtures__', fileName);
 export const readTestFile = (fileName) => fs.readFileSync(getFixturePath(fileName), 'utf-8');
+console.log(__dirname);
+console.log(getFixturePath('expected.html'));
+// console.log(readTestFile('expected.html'));
