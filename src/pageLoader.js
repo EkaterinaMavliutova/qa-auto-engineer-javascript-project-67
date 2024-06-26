@@ -4,6 +4,11 @@ import path from 'node:path';
 import process from 'node:process';
 import * as cheerio from 'cheerio';
 
+// const pathName = '/Users/ekaterinamavlutova/Desktop/sourcemaking-com';
+// const pathExt = path.parse(pathName).ext;
+// console.log(pathExt.ext === '');
+// console.log(pathName.replace('.html', ''));
+
 const getHTML = async (url) => {
   const response = await axios.get(url);
   const pageHTML = response.data;
@@ -66,7 +71,7 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   await fsp.mkdir(pathToFiles, { recursive: true });
   const localSrcesUrls = getAbsoluteUrls($, $localSrces, mainUrl); // абсолютные ссылки
   const localSrcesNames = localSrcesUrls.map((item) => {
-    const fileExt = path.parse(item).ext;
+    const fileExt = path.parse(item).ext || '.html';
     const fileWithoutExt = item.replace(fileExt, '');
     const hasQueryParams = fileExt.lastIndexOf('?') !== -1;
     const withoutQueryParameters = fileExt.slice(0, hasQueryParams ? fileExt.lastIndexOf('?') : fileExt.length);
@@ -89,6 +94,6 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   return { filepath: htmlFilePath };
 };
 
-console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test'));
+// console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test'));
 
 export default pageLoader;
