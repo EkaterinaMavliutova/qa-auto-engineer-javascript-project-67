@@ -4,19 +4,28 @@ import path from 'node:path';
 import process from 'node:process';
 import * as cheerio from 'cheerio';
 
-// const pathName = '/Users/ekaterinamavlutova/Desktop/sourcemaking-com';
-// const pathExt = path.parse(pathName).ext;
-// console.log(pathExt.ext === '');
-// console.log(pathName.replace('.html', ''));
+const tagAttrMap = {
+  img: 'src',
+  link: 'href',
+  script: 'src',
+};
 
 const getHTML = async (url) => {
-  const response = await axios.get(url);
-  const pageHTML = response.data;
-  return pageHTML;
+  try {
+    const response = await axios.get(url);
+    const pageHTML = response.data;
+    return pageHTML;
+  } catch (err) {
+    throw new Error(`Oops, an error occurred connecting to '${url}'! Details: ${err.message}`);
+  }
 };
 
 const saveAsHtml = async (pathToFile, htmlData) => {
-  await fsp.writeFile(pathToFile, htmlData, 'utf-8');
+  try {
+    await fsp.writeFile(pathToFile, htmlData, 'utf-8');
+  } catch (err) {
+    throw new Error(`Unable to create '${pathToFile}'. Details: ${err.message}`);
+  }
 };
 
 const makeNameFromUrl = (someUrl, additionalText = '') => {
@@ -28,13 +37,7 @@ const makeNameFromUrl = (someUrl, additionalText = '') => {
   return `${urlWithoutProtocol}${additionalText}`;
 };
 
-const tagAttr = {
-  img: 'src',
-  link: 'href',
-  script: 'src',
-};
-
-const getLocalSrces = (domObj, url) => Object.entries(tagAttr).reduce((acc, [tag, attr]) => {
+const getLocalAssets = (domObj, url) => Object.entries(tagAttrMap).reduce((acc, [tag, attr]) => {
   domObj(tag)
     .filter((i, element) => {
       const hasAttr = domObj(element).attr(attr);
@@ -49,47 +52,59 @@ const getLocalSrces = (domObj, url) => Object.entries(tagAttr).reduce((acc, [tag
 }, []);
 
 const getAbsoluteUrls = (domObj, domElements, url) => domElements.map((element) => {
-  const attr = tagAttr[domObj(element).get(0).tagName];
+  const attr = tagAttrMap[domObj(element).get(0).tagName];
   const absoluteUrl = new URL(domObj(element).attr(attr), url.origin);
   return absoluteUrl.href;
 });
 
-const downloadAsset = async (dirname, url, filename) => {
+const downloadAsset = async (dirName, url, fileName) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const fullPath = path.join(dirname, filename);
+  const fullPath = path.join(dirName, fileName);
   await fsp.writeFile(fullPath, response.data);
-  // return fullPath; // нужно ли что-то возвращать?
+};
+
+const replaceLinks = (domObj, domElements, newLinks) => {
+  domElements.forEach((element, i) => {
+    const attr = tagAttrMap[domObj(element).get(0).tagName];
+    domObj(element).attr(attr, newLinks[i]);
+  });
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
   const mainUrl = new URL(link); // URL из ссылки в строке
   const html = await getHTML(mainUrl); // html страницы
   const $ = cheerio.load(html); // объект cheerio (DOM)
-  const $localSrces = getLocalSrces($, mainUrl); // элементы cheerio
-  const dirForFilesName = makeNameFromUrl(link, '_files');
-  const pathToFiles = path.join(saveToDir, dirForFilesName); // директория для локальных ресурсов
-  await fsp.mkdir(pathToFiles, { recursive: true });
-  const localSrcesUrls = getAbsoluteUrls($, $localSrces, mainUrl); // абсолютные ссылки
-  const localSrcesNames = localSrcesUrls.map((item) => {
+  const $localAssets = getLocalAssets($, mainUrl); // элементы cheerio
+  const dirForAssetsName = makeNameFromUrl(link, '_files');
+  const pathToAssets = path.join(saveToDir, dirForAssetsName); // директория для локальных ресурсов
+  // try {
+  //   await fsp.access(pathToAssets, fsp.constants.W_OK);
+  // } catch (err) {
+  //   throw new Error(`Unable to create '${pathToAssets}, access denied'`);
+  // }
+  await fsp.mkdir(pathToAssets, { recursive: true });
+  const localAssetsUrls = getAbsoluteUrls($, $localAssets, mainUrl); // абсолютные ссылки
+  const localAssetsNames = localAssetsUrls.map((item) => {
     const fileExt = path.parse(item).ext || '.html';
     const fileWithoutExt = item.replace(fileExt, '');
     const hasQueryParams = fileExt.lastIndexOf('?') !== -1;
     const withoutQueryParameters = fileExt.slice(0, hasQueryParams ? fileExt.lastIndexOf('?') : fileExt.length);
     return makeNameFromUrl(fileWithoutExt, withoutQueryParameters);
   }); // массив имен файлов
-  await Promise.allSettled(localSrcesUrls.map((item, index) => downloadAsset(
-    pathToFiles,
-    item,
-    localSrcesNames[index],
-  ))); // скачиваем ссылки в указанную директорию
-  const newLinksToLocalSrces = localSrcesNames.map((item) => path.join(dirForFilesName, item));
-  $localSrces.forEach((element, i) => {
-    const attr = tagAttr[$(element).get(0).tagName];
-    $(element).attr(attr, newLinksToLocalSrces[i]);
-  });
-  const htmlFilename = makeNameFromUrl(link, '.html');
-  const htmlFilePath = path.join(saveToDir, htmlFilename);
-  saveAsHtml(htmlFilePath, $.html());
+  try {
+    await Promise.allSettled(localAssetsUrls.map((item, index) => downloadAsset(
+      pathToAssets,
+      item,
+      localAssetsNames[index],
+    ))); // скачиваем ссылки в указанную директорию
+  } catch (err) {
+    throw new Error(err.message);
+  }
+  const newLinksToLocalAssets = localAssetsNames.map((item) => path.join(dirForAssetsName, item));
+  replaceLinks($, $localAssets, newLinksToLocalAssets);
+  const htmlFileName = makeNameFromUrl(link, '.html');
+  const htmlFilePath = path.join(saveToDir, htmlFileName);
+  await saveAsHtml(htmlFilePath, $.html());
 
   return { filepath: htmlFilePath };
 };

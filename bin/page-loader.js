@@ -12,8 +12,12 @@ program
   .argument('URL')
   .option('-o, --output [dir]', 'output dir (default: current working dir)')
   .action(async (URL, option) => {
-    const { filepath } = await pageLoader(URL, option.output);
-    console.log(`Page was successfully downloaded into ${filepath}`);
+    try {
+      const { filepath } = await pageLoader(URL, option.output);
+      console.log(`Page was successfully downloaded into ${filepath}`);
+    } catch (err) {
+      program.error(err, { exitCode: 1 });
+    }
   });
 
-program.parse();
+program.parseAsync();
