@@ -24,7 +24,7 @@ test('pageLoader returns file path according to passed arguments', async () => {
     .reply(200, await readTestFile('expected.html'));
   const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
   // console.log(await fsp.readFile(path.join(tempDir, 'ru-hexlet-io-courses.html'), 'utf8'));
-  console.log(`tempDir: ${tempDir}`);
+  // console.log(`tempDir: ${tempDir}`);
   expect(result).toEqual({
     filepath: path.join(tempDir, 'ru-hexlet-io-courses.html'),
   });
