@@ -31,13 +31,13 @@ export const removeTempDirs = async (dirPrefix) => {
 // const dirContent = await removeTempDirs('page-loader-');
 // console.log(dirContent);
 
-const findTempDirs = async (dirPrefix) => {
-  const osTempDir = os.tmpdir();
-  const dirContents = await fsp.readdir(osTempDir, { withFileTypes: true });
-  const tempDirs = dirContents
-    .filter((item) => item.isDirectory() && item.name.startsWith(dirPrefix));
-  return tempDirs;
-};
+// const findTempDirs = async (dirPrefix) => {
+//   const osTempDir = os.tmpdir();
+//   const dirContents = await fsp.readdir(osTempDir, { withFileTypes: true });
+//   const tempDirs = dirContents
+//     .filter((item) => item.isDirectory() && item.name.startsWith(dirPrefix));
+//   return tempDirs;
+// };
 
 // console.log(await findTempDirs('page-loader-'));
 // console.log(__dirname);
