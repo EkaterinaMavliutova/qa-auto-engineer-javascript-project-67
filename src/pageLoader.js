@@ -78,6 +78,11 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
+  try {
+    await fsp.access(saveToDir, fsp.constants.F_OK);
+  } catch (err) {
+    throw new Error(`Directory passed for downloading ${saveToDir} is not exist`);
+  }
   const mainUrl = new URL(link); // URL из ссылки в строке
   const html = await getHTML(mainUrl); // html страницы
   const $ = cheerio.load(html); // объект cheerio (DOM)
@@ -112,6 +117,6 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   return { filepath: htmlFilePath };
 };
 
-// console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test'));
+// console.log(await pageLoader('https://sourcemaking.com/courses', '/Users/ekaterinamavlutova/Desktop/test'));
 
 export default pageLoader;
