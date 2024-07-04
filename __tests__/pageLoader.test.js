@@ -4,8 +4,8 @@ import path from 'node:path';
 import pageLoader from '../src/pageLoader.js';
 import {
   readTestFile, makeTempDir, removeTempDirs,
+  getFixturePath,
 } from './utils.js';
-import { read } from 'node:fs';
 
 let tempDir = '';
 const nockedRequests = [
@@ -40,16 +40,6 @@ beforeEach(async () => {
   } catch (err) {
     throw new Error(err);
   }
-  // const fixtureFiles = await Promise.all(
-  //   nockedRequests.map(({ fixtureName }) => readTestFile(fixtureName)),
-  // );
-  // const scope = nock('https://ru.hexlet.io');
-  // nockedRequests.forEach(({ route }, index) => {
-  //   scope
-  //     .persist()
-  //     .get(route)
-  //     .reply(200, fixtureFiles[index]);
-  // });
 });
 
 describe('pageLoader (positive scenarios)', () => {
@@ -121,18 +111,6 @@ describe('pageLoader (positive scenarios)', () => {
 });
 
 describe('pageLoader (negative scenarios)', () => {
-  // beforeEach(async () => {
-  //   const fixtureFiles = await Promise.all(
-  //     nockedRequests.map(({ fixtureName }) => readTestFile(fixtureName)),
-  //   );
-  //   const scope = nock('https://ru.hexlet.io');
-  //   nockedRequests.forEach(({ route }, index) => {
-  //     scope
-  //       // .persist()
-  //       .get(route)
-  //       .reply(400, fixtureFiles[index]);
-  //   });
-  // });
   test.each([
     100,
     300,
@@ -158,19 +136,32 @@ describe('pageLoader (negative scenarios)', () => {
     const fakePath = path.join(tempDir, 'fakePath');
 
     await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
-      .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist`);
+      .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
   });
 
-  test('trows when there is no write permissions for the directory', async () => {
+  test('trows when there is no write permission for the directory', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
-    fsp.chmod(tempDir, 0o555);
+    await fsp.chmod(tempDir, 0o555);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toBeInstanceOf(Error);
+  });
+
+  test('trows when passed path for downloading is not a directory', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+      .get('/assets/application.css')
+      .reply(200, '');
+    const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+    await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
+      .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
   });
 });
 

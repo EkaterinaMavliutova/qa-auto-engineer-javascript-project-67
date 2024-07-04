@@ -81,7 +81,15 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   try {
     await fsp.access(saveToDir, fsp.constants.F_OK);
   } catch (err) {
-    throw new Error(`Directory passed for downloading ${saveToDir} is not exist`);
+    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err.message}`);
+  }
+  try {
+    const pathStats = await fsp.stat(saveToDir);
+    if (!pathStats.isDirectory()) {
+      throw new Error(`Passed path ${saveToDir} for downloading is not a directory!`);
+    }
+  } catch (err) {
+    throw new Error(err.message);
   }
   const mainUrl = new URL(link); // URL из ссылки в строке
   const html = await getHTML(mainUrl); // html страницы
