@@ -123,7 +123,7 @@ describe('pageLoader (negative scenarios)', () => {
     300,
     400,
     500,
-  ])('trows when connecting to web page gets response code except for 2**: whith %d', async (responseCode) => {
+  ])('throws when connecting to web page gets response code except for 2**: whith %d', async (responseCode) => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
@@ -134,7 +134,7 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(/Oops, an error occurred connecting to/);
   });
 
-  // test('trows when nonexistent directory is passed', async () => {
+  // test('throws when nonexistent directory is passed', async () => {
   //   expect.assertions(1);
 
   //   nock('https://ru.hexlet.io')
@@ -146,19 +146,27 @@ describe('pageLoader (negative scenarios)', () => {
   //     .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
   // });
 
-  test('trows when there is no write permission for the directory', async () => {
+  test('throws when there is no write permission for the directory', async () => {
     expect.assertions(1);
 
+    await fsp.chmod(tempDir, 0o555);
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
-    await fsp.chmod(tempDir, 0o555);
+      // .get('/assets/application.css')
+      // .reply(200)
+      // .get('/assets/professions/nodejs.png')
+      // .reply(200)
+      // .get('/courses')
+      // .reply(200)
+      // .get('/packs/js/runtime.js')
+      // .reply(200);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow(/access denied/);
   });
 
-  // test('trows when passed path for downloading is not a directory', async () => {
+  // test('throws when passed path for downloading is not a directory', async () => {
   //   expect.assertions(1);
 
   //   nock('https://ru.hexlet.io')
@@ -171,26 +179,26 @@ describe('pageLoader (negative scenarios)', () => {
   //     .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
   // });
 
-  test('trows when failing to download local asset', async () => {
+  test('throws when failing to download local asset', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
       .get('/assets/application.css')
-      .reply(500)
-      .get('/assets/professions/nodejs.png')
-      .reply(200)
-      .get('/courses')
-      .reply(200)
-      .get('/packs/js/runtime.js')
-      .reply(200);
+      .reply(500);
+      // .get('/assets/professions/nodejs.png')
+      // .reply(500)
+      // .get('/courses')
+      // .reply(500)
+      // .get('/packs/js/runtime.js')
+      // .reply(500);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow(/Unable to download local asset/);
   });
 
-  test('trows when passed path for downloading is not a directory', async () => {
+  test('throws when passed path for downloading is not a directory', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
@@ -202,7 +210,7 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(/ENOTDIR/);
   });
 
-  test('trows when nonexistent directory is passed', async () => {
+  test('throws when nonexistent directory is passed', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
@@ -214,7 +222,7 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(/ENOENT/);
   });
 
-  test('trows when URL argument is not passed', async () => {
+  test('throws when URL argument is not passed', async () => {
     expect.assertions(1);
 
     await expect(pageLoader(tempDir))

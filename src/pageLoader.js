@@ -108,7 +108,7 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   try {
     await fsp.access(saveToDir, fsp.constants.W_OK);
   } catch (err) {
-    throw new Error(`Unable to create '${pathToAssets}, access denied'`);
+    throw new Error(`Unable to create '${pathToAssets}', access denied`);
   }
   await fsp.mkdir(pathToAssets, { recursive: true });
   const localAssetsUrls = getAbsoluteUrls($, $localAssets, mainUrl); // абсолютные ссылки
