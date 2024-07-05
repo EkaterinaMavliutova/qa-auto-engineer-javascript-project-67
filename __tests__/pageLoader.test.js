@@ -55,10 +55,18 @@ describe('pageLoader (positive scenarios)', () => {
     });
   });
   test('returns file path according to passed arguments', async () => {
+    expect.assertions(1);
+
     const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
     expect(result).toEqual({
       filepath: path.join(tempDir, 'ru-hexlet-io-courses.html'),
     });
+  });
+
+  test('not throws when valid arguments are passed', async () => {
+    expect.assertions(1);
+    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+      .resolves.not.toThrow();
   });
 
   test('replaces links to local assets after downloading', async () => {
