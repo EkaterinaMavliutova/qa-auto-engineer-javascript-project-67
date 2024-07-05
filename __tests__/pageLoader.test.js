@@ -134,17 +134,17 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow();
   });
 
-  test('trows when nonexistent directory is passed', async () => {
-    expect.assertions(1);
+  // test('trows when nonexistent directory is passed', async () => {
+  //   expect.assertions(1);
 
-    nock('https://ru.hexlet.io')
-      .get('/courses')
-      .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
-    const fakePath = path.join(tempDir, 'fakePath');
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+  //   const fakePath = path.join(tempDir, 'fakePath');
 
-    await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
-      .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
-  });
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
+  //     .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
+  // });
 
   test('trows when there is no write permission for the directory', async () => {
     expect.assertions(1);
@@ -171,14 +171,20 @@ describe('pageLoader (negative scenarios)', () => {
   //     .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
   // });
 
-  test('trows when failing to write local asset to file', async () => {
+  test('trows when failing to download local asset', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
-      .get('/200')
-      .reply(200, '');
+      .get('/assets/application.css')
+      .reply(500)
+      .get('/assets/professions/nodejs.png')
+      .reply(200)
+      .get('/courses')
+      .reply(200)
+      .get('/packs/js/runtime.js')
+      .reply(200);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow();
@@ -194,6 +200,25 @@ describe('pageLoader (negative scenarios)', () => {
     const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
     await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
       .rejects.toThrow(/ENOTDIR/);
+  });
+
+  test('trows when nonexistent directory is passed', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+    const fakePath = path.join(tempDir, 'fakePath');
+
+    await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
+      .rejects.toThrow(/ENOENT/);
+  });
+
+  test('trows when URL argument is not passed', async () => {
+    expect.assertions(1);
+
+    await expect(pageLoader(tempDir))
+      .rejects.toThrow();
   });
 });
 
