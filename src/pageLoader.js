@@ -79,19 +79,13 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
   if (!link) {
-    throw new Error('Emty or incorrect URL');
+    throw new Error('Empty or incorrect URL');
   }
   try {
     await fsp.access(saveToDir, fsp.constants.F_OK);
   } catch (err) {
-    throw new Error(err);
+    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err}`); // err.message
   }
-  // try {
-  //   await fsp.access(saveToDir, fsp.constants.F_OK);
-  // } catch (err) {
-  // throw new Error(`Directory passed for downloading ${saveToDir} is not exist.
-  // Details: ${ err.message }`);
-  // }
   // try {
   //   const pathStats = await fsp.stat(saveToDir);
   //   if (!pathStats.isDirectory()) {
@@ -100,7 +94,12 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   // } catch (err) {
   //   throw new Error(err.message);
   // }
-  const mainUrl = new URL(link); // URL из ссылки в строке
+  let mainUrl = '';
+  try {
+    mainUrl = new URL(link); // URL из ссылки в строке
+  } catch (err) {
+    throw new Error(`Empty or incorrect URL% ${link}`);
+  }
   const html = await getHTML(mainUrl); // html страницы
   const $ = cheerio.load(html); // объект cheerio (DOM)
   const $localAssets = getLocalAssets($, mainUrl); // элементы cheerio
@@ -134,6 +133,6 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   return { filepath: htmlFilePath };
 };
 
-// console.log(await pageLoader('https://sourcemaking.com/courses', '/Users/ekaterinamavlutova/Desktop/test'));
-// console.log(await pageLoader());
+// console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test/testPathAccess'));
+
 export default pageLoader;

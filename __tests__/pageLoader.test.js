@@ -131,7 +131,7 @@ describe('pageLoader (negative scenarios)', () => {
       .reply(responseCode);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
-      .rejects.toThrow();
+      .rejects.toThrow(/Oops, an error occurred connecting to/);
   });
 
   // test('trows when nonexistent directory is passed', async () => {
@@ -155,7 +155,7 @@ describe('pageLoader (negative scenarios)', () => {
     await fsp.chmod(tempDir, 0o555);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
-      .rejects.toBeInstanceOf(Error);
+      .rejects.toThrow(/access denied/);
   });
 
   // test('trows when passed path for downloading is not a directory', async () => {
@@ -187,7 +187,7 @@ describe('pageLoader (negative scenarios)', () => {
       .reply(200);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
-      .rejects.toThrow();
+      .rejects.toThrow(/Unable to download local asset/);
   });
 
   test('trows when passed path for downloading is not a directory', async () => {
@@ -218,7 +218,7 @@ describe('pageLoader (negative scenarios)', () => {
     expect.assertions(1);
 
     await expect(pageLoader(tempDir))
-      .rejects.toThrow();
+      .rejects.toThrow(/Empty or incorrect URL/);
   });
 });
 
