@@ -163,18 +163,18 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
   });
 
-  test('trows when failing to write local asset to file', async () => {
-    expect.assertions(1);
+  // test('trows when failing to write local asset to file', async () => {
+  //   expect.assertions(1);
 
-    nock('https://ru.hexlet.io')
-      .get('/courses')
-      .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
-      .get('/200')
-      .reply(200, '');
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+  //     .get('/200')
+  //     .reply(200, '');
 
-    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
-      .rejects.toThrow();
-  });
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+  //     .rejects.toThrow();
+  // });
 
   test('trows when failing to write local asset to file', async () => {
     expect.assertions(1);
