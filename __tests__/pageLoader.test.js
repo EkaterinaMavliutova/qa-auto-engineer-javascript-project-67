@@ -149,18 +149,18 @@ describe('pageLoader (negative scenarios)', () => {
   test('throws when there is no write permission for the directory', async () => {
     expect.assertions(1);
 
-    await fsp.chmod(tempDir, 0o555);
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
-      // .get('/assets/application.css')
-      // .reply(200)
-      // .get('/assets/professions/nodejs.png')
-      // .reply(200)
-      // .get('/courses')
-      // .reply(200)
-      // .get('/packs/js/runtime.js')
-      // .reply(200);
+    // .get('/assets/application.css')
+    // .reply(200)
+    // .get('/assets/professions/nodejs.png')
+    // .reply(200)
+    // .get('/courses')
+    // .reply(200)
+    // .get('/packs/js/runtime.js')
+    // .reply(200);
+    await fsp.chmod(tempDir, fsp.constants.S_IRUSR);// 0o555);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow(/access denied/);
@@ -187,12 +187,12 @@ describe('pageLoader (negative scenarios)', () => {
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
       .get('/assets/application.css')
       .reply(500);
-      // .get('/assets/professions/nodejs.png')
-      // .reply(500)
-      // .get('/courses')
-      // .reply(500)
-      // .get('/packs/js/runtime.js')
-      // .reply(500);
+    // .get('/assets/professions/nodejs.png')
+    // .reply(500)
+    // .get('/courses')
+    // .reply(500)
+    // .get('/packs/js/runtime.js')
+    // .reply(500);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow(/Unable to download local asset/);
