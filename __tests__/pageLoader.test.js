@@ -150,33 +150,33 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toBeInstanceOf(Error);
   });
 
-  test('trows when passed path for downloading is not a directory', async () => {
-    expect.assertions(1);
-
-    nock('https://ru.hexlet.io')
-      .get('/courses')
-      .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
-      .get('/assets/application.css')
-      .reply(200, '');
-    const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
-    await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
-      .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
-  });
-
-  // test('trows when failing to write local asset to file', async () => {
+  // test('trows when passed path for downloading is not a directory', async () => {
   //   expect.assertions(1);
 
   //   nock('https://ru.hexlet.io')
   //     .get('/courses')
   //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
-  //     .get('/200')
+  //     .get('/assets/application.css')
   //     .reply(200, '');
-
-  //   await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
-  //     .rejects.toThrow();
+  //   const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
+  //     .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
   // });
 
   test('trows when failing to write local asset to file', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+      .get('/200')
+      .reply(200, '');
+
+    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+      .rejects.toThrow();
+  });
+
+  test('trows when passed path for downloading is not a directory', async () => {
     expect.assertions(1);
 
     nock('https://ru.hexlet.io')
