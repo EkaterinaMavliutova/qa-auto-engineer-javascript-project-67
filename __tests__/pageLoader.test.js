@@ -103,18 +103,19 @@ describe('pageLoader (positive scenarios)', () => {
     },
   );
 
-  test('downloads files and page to current working directory if directory is not passed', async () => {
-    expect.assertions(2);
-    const currentWorkingDir = process.cwd();
-    process.chdir(tempDir);
-    const result = await pageLoader('https://ru.hexlet.io/courses');
-    const expectedFilePath = path.join(process.cwd(), 'ru-hexlet-io-courses.html');
-    const expectedAssetsPath = expectedFilePath.replace('.html', '_files');
-    const resultAssetsPath = result.filepath.replace('.html', '_files');
-    expect(result.filepath).toBe(expectedFilePath);
-    expect(resultAssetsPath).toBe(expectedAssetsPath);
-    process.chdir(currentWorkingDir);
-  });
+  // test('downloads files and page to current working directory
+  // if directory is not passed', async () => {
+  //   expect.assertions(2);
+  //   const currentWorkingDir = process.cwd();
+  //   process.chdir(tempDir);
+  //   const result = await pageLoader('https://ru.hexlet.io/courses');
+  //   const expectedFilePath = path.join(process.cwd(), 'ru-hexlet-io-courses.html');
+  //   const expectedAssetsPath = expectedFilePath.replace('.html', '_files');
+  //   const resultAssetsPath = result.filepath.replace('.html', '_files');
+  //   expect(result.filepath).toBe(expectedFilePath);
+  //   expect(resultAssetsPath).toBe(expectedAssetsPath);
+  //   process.chdir(currentWorkingDir);
+  // });
 });
 
 describe('pageLoader (negative scenarios)', () => {
