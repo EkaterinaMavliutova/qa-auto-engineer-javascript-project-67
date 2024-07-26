@@ -3,6 +3,9 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import * as cheerio from 'cheerio';
+import debug from 'debug';
+
+const log = debug('page-loader');
 
 const tagAttrMap = {
   img: 'src',
@@ -78,6 +81,7 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
+  log('pageLoader is now running!');
   if (!link) {
     throw new Error('Empty or incorrect URL');
   }
@@ -136,3 +140,6 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
 // console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test/testPathAccess'));
 
 export default pageLoader;
+// export default async () => {
+//   throw new Error('Unknown error');
+// };

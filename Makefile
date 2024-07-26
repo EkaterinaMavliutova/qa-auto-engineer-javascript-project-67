@@ -10,5 +10,8 @@ test-coverage:
 test:
 	npm test
 
+testWithDebug:
+	DEBUG=nock.* npm test
+
 lint:
 	npx eslint .
