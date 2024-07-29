@@ -1,4 +1,4 @@
-import { isAxiosError } from 'axios';
+import /* axios, */ { isAxiosError } from 'axios';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -92,7 +92,7 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   try {
     await fsp.access(saveToDir, fsp.constants.F_OK);
   } catch (err) {
-    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err}`);
+    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err}`); // err.message
   }
   // try {
   //   const pathStats = await fsp.stat(saveToDir);
