@@ -86,9 +86,9 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
-  // if (!link) {
-  //   throw new Error('Empty or incorrect URL');
-  // }
+  if (!link) {
+    throw new Error('Empty or incorrect URL');
+  }
   try {
     await fsp.access(saveToDir, fsp.constants.F_OK);
   } catch (err) {
