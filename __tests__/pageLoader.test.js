@@ -58,6 +58,7 @@ describe('pageLoader (positive scenarios)', () => {
     expect.assertions(1);
 
     const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+
     expect(result).toEqual({
       filepath: path.join(tempDir, 'ru-hexlet-io-courses.html'),
     });
@@ -65,12 +66,14 @@ describe('pageLoader (positive scenarios)', () => {
 
   test('not throws when valid arguments are passed', async () => {
     expect.assertions(1);
+
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .resolves.not.toThrow();
   });
 
   test('replaces links to local assets after downloading', async () => {
     const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+
     expect(await fsp.readFile(result.filepath, 'utf-8'))
       .toEqual(await readTestFile('expected.html'));
   });
@@ -96,26 +99,14 @@ describe('pageLoader (positive scenarios)', () => {
     'downloads local asset $expectedFile to the directory with \'_files\' suffix',
     async ({ downloadedLocalAsset, expectedFile }) => {
       const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+
       const expectedLocalAssetsPath = result.filepath.replace('.html', '_files');
       const fullPathToLocalAsset = path.join(expectedLocalAssetsPath, downloadedLocalAsset);
+
       expect(await fsp.readFile(fullPathToLocalAsset, 'utf-8'))
         .toEqual(await readTestFile(expectedFile));
     },
   );
-
-  // test('downloads files and page to current working directory
-  // if directory is not passed', async () => {
-  //   expect.assertions(2);
-  //   const currentWorkingDir = process.cwd();
-  //   process.chdir(tempDir);
-  //   const result = await pageLoader('https://ru.hexlet.io/courses');
-  //   const expectedFilePath = path.join(process.cwd(), 'ru-hexlet-io-courses.html');
-  //   const expectedAssetsPath = expectedFilePath.replace('.html', '_files');
-  //   const resultAssetsPath = result.filepath.replace('.html', '_files');
-  //   expect(result.filepath).toBe(expectedFilePath);
-  //   expect(resultAssetsPath).toBe(expectedAssetsPath);
-  //   process.chdir(currentWorkingDir);
-  // });
 });
 
 describe('pageLoader (negative scenarios)', () => {
@@ -126,7 +117,6 @@ describe('pageLoader (negative scenarios)', () => {
     500,
   ])('throws when connecting to web page gets response code except for 2**: whith %d', async (responseCode) => {
     expect.assertions(1);
-
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(responseCode);
@@ -182,7 +172,6 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when failing to download local asset', async () => {
     expect.assertions(1);
-
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
@@ -201,19 +190,18 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when passed path for downloading is not a directory', async () => {
     expect.assertions(1);
-
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
 
     const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+
     await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
       .rejects.toThrow(/ENOTDIR/);
   });
 
   test('throws when nonexistent directory is passed', async () => {
     expect.assertions(1);
-
     nock('https://ru.hexlet.io')
       .get('/courses')
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
