@@ -1,4 +1,4 @@
-import /* axios, */ { isAxiosError } from 'axios';
+import { isAxiosError } from 'axios';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -86,13 +86,13 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
-  if (!link) {
-    throw new Error('Empty or incorrect URL');
-  }
+  // if (!link) {
+  //   throw new Error('Empty or incorrect URL');
+  // }
   try {
     await fsp.access(saveToDir, fsp.constants.F_OK);
   } catch (err) {
-    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err}`); // err.message
+    throw new Error(`Directory passed for downloading ${saveToDir} is not exist. Details: ${err}`);
   }
   // try {
   //   const pathStats = await fsp.stat(saveToDir);
