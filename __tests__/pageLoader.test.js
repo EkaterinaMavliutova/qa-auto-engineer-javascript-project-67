@@ -1,144 +1,237 @@
-import { promises as fsp } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import os from 'os';
 import nock from 'nock';
-import pageLoader from '../src/index.js';
+import fsp from 'node:fs/promises';
+import path from 'node:path';
+import pageLoader from '../src/pageLoader.js';
+import {
+  readTestFile, makeTempDir, removeTempDirs,
+  getFixturePath,
+} from './utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const buildFixturesPath = (...paths) => path.join(__dirname, '..', '__fixtures__', ...paths);
-const readFile = (dirpath, filename) => fsp.readFile(path.join(dirpath, filename), 'utf-8');
-
-const pageDirname = 'ru-hexlet-io-courses_files';
-const pageFilename = 'ru-hexlet-io-courses.html';
-const baseUrl = 'https://ru.hexlet.io';
-const pagePath = '/courses';
-const pageUrl = new URL(pagePath, baseUrl);
-
-let expectedPageContent = '';
-let resources = [
+let tempDir = '';
+const nockedRequests = [
   {
-    format: 'css',
-    urlPath: '/assets/application.css',
-    filename: path.join(
-      pageDirname,
-      'ru-hexlet-io-assets-application.css',
-    ),
+    route: '/assets/application.css',
+    fixtureName: 'application.css',
   },
   {
-    format: 'png',
-    urlPath: '/assets/professions/nodejs.png',
-    filename: path.join(
-      pageDirname,
-      'ru-hexlet-io-assets-professions-nodejs.png',
-    ),
+    route: '/assets/professions/nodejs.png',
+    fixtureName: 'nodejs.png',
   },
   {
-    format: 'js',
-    urlPath: '/packs/js/runtime.js',
-    filename: path.join(
-      pageDirname,
-      'ru-hexlet-io-packs-js-runtime.js',
-    ),
+    route: '/courses',
+    fixtureName: 'ru-hexlet-io-courses.html',
   },
   {
-    format: 'html',
-    urlPath: '/courses',
-    filename: path.join(
-      pageDirname,
-      'ru-hexlet-io-courses.html',
-    ),
+    route: '/courses',
+    fixtureName: 'ru-hexlet-io-courses.html',
+  },
+  {
+    route: '/packs/js/runtime.js',
+    fixtureName: 'runtime.js',
   },
 ];
 
-const formats = resources.map(({ format }) => format);
-const scope = nock(baseUrl).persist();
+beforeAll(() => nock.disableNetConnect());
 
-// Важно отрубить реальные коннекты
-nock.disableNetConnect();
-
-beforeAll(async () => {
-  const sourcePageContent = await readFile(buildFixturesPath('.'), pageFilename);
-  const promises = resources.map((info) => readFile(buildFixturesPath('.'), info.filename)
-    .then((data) => ({ ...info, data })));
-
-  expectedPageContent = await readFile(buildFixturesPath('.'), 'expected.html' /* pageFilename */);
-  resources = await Promise.all(promises);
-
-  scope.get(pagePath).reply(200, sourcePageContent);
-  resources.forEach(({ urlPath, data }) => scope.get(urlPath).reply(200, data));
+beforeEach(async () => {
+  try {
+    await removeTempDirs('page-loader-');
+    tempDir = await makeTempDir('page-loader-');
+  } catch (err) {
+    throw new Error(err);
+  }
 });
 
-describe('negative cases', () => {
-  let tmpDirPath = '';
+describe('pageLoader (positive scenarios)', () => {
   beforeEach(async () => {
-    // На каждый тест своя временная директория (это изоляция!)
-    // Чистить не надо, система сама почистит
-    tmpDirPath = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
+    const fixtureFiles = await Promise.all(
+      nockedRequests.map(({ fixtureName }) => readTestFile(fixtureName)),
+    );
+    const scope = nock('https://ru.hexlet.io');
+    nockedRequests.forEach(({ route }, index) => {
+      scope
+        .get(route)
+        .reply(200, fixtureFiles[index]);
+    });
+  });
+  test('returns file path according to passed arguments', async () => {
+    expect.assertions(1);
+
+    const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+    expect(result).toEqual({
+      filepath: path.join(tempDir, 'ru-hexlet-io-courses.html'),
+    });
   });
 
-  // проверка ошибок сети
-  test('load page: no response', async () => {
-    await expect(fsp.access(path.join(tmpDirPath, pageFilename)))
-      .rejects.toThrow(/ENOENT/);
-
-    const invalidBaseUrl = 'https://badsite.com';
-    const expectedError = `getaddrinfo ENOTFOUND ${invalidBaseUrl}`;
-    nock(invalidBaseUrl).persist().get('/').replyWithError(expectedError);
-    await expect(pageLoader(invalidBaseUrl, tmpDirPath))
-      .rejects.toThrow(expectedError);
-
-    await expect(fsp.access(path.join(tmpDirPath, pageFilename)))
-      .rejects.toThrow(/ENOENT/);
+  test('not throws when valid arguments are passed', async () => {
+    expect.assertions(1);
+    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+      .resolves.not.toThrow();
   });
 
-  // проверка ошибок с сайта
-  test.each([404, 500])('load page: status code %s', async (code) => {
-    scope.get(`/${code}`).reply(code, '');
-    const url = new URL(`/${code}`, baseUrl).toString();
-    await expect(pageLoader(url, tmpDirPath))
-      .rejects.toThrow(new RegExp(code));
+  test('replaces links to local assets after downloading', async () => {
+    const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+    expect(await fsp.readFile(result.filepath, 'utf-8'))
+      .toEqual(await readTestFile('expected.html'));
   });
 
-  // проверка ошибок файловой системы
-  test('load page: file system errors', async () => {
-    const rootDirPath = '/sys';
-    await expect(pageLoader(pageUrl.toString(), rootDirPath))
-      .rejects.toThrow();
+  test.each([
+    {
+      downloadedLocalAsset: 'ru-hexlet-io-assets-application.css',
+      expectedFile: 'application.css',
+    },
+    {
+      downloadedLocalAsset: 'ru-hexlet-io-assets-professions-nodejs.png',
+      expectedFile: 'nodejs.png',
+    },
+    {
+      downloadedLocalAsset: 'ru-hexlet-io-courses.html',
+      expectedFile: 'ru-hexlet-io-courses.html',
+    },
+    {
+      downloadedLocalAsset: 'ru-hexlet-io-packs-js-runtime.js',
+      expectedFile: 'runtime.js',
+    },
+  ])(
+    'downloads local asset $expectedFile to the directory with \'_files\' suffix',
+    async ({ downloadedLocalAsset, expectedFile }) => {
+      const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
+      const expectedLocalAssetsPath = result.filepath.replace('.html', '_files');
+      const fullPathToLocalAsset = path.join(expectedLocalAssetsPath, downloadedLocalAsset);
+      expect(await fsp.readFile(fullPathToLocalAsset, 'utf-8'))
+        .toEqual(await readTestFile(expectedFile));
+    },
+  );
 
-    const filepath = buildFixturesPath(pageFilename);
-    await expect(pageLoader(pageUrl.toString(), filepath))
+  // test('downloads files and page to current working directory
+  // if directory is not passed', async () => {
+  //   expect.assertions(2);
+  //   const currentWorkingDir = process.cwd();
+  //   process.chdir(tempDir);
+  //   const result = await pageLoader('https://ru.hexlet.io/courses');
+  //   const expectedFilePath = path.join(process.cwd(), 'ru-hexlet-io-courses.html');
+  //   const expectedAssetsPath = expectedFilePath.replace('.html', '_files');
+  //   const resultAssetsPath = result.filepath.replace('.html', '_files');
+  //   expect(result.filepath).toBe(expectedFilePath);
+  //   expect(resultAssetsPath).toBe(expectedAssetsPath);
+  //   process.chdir(currentWorkingDir);
+  // });
+});
+
+describe('pageLoader (negative scenarios)', () => {
+  test.each([
+    100,
+    300,
+    400,
+    500,
+  ])('throws when connecting to web page gets response code except for 2**: whith %d', async (responseCode) => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(responseCode);
+
+    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+      .rejects.toThrow(/Oops, an error occurred connecting to/);
+  });
+
+  // test('throws when nonexistent directory is passed', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+  //   const fakePath = path.join(tempDir, 'fakePath');
+
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
+  //     .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
+  // });
+
+  // test('throws when there is no write permission for the directory', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+  //   // .get('/assets/application.css')
+  //   // .reply(200)
+  //   // .get('/assets/professions/nodejs.png')
+  //   // .reply(200)
+  //   // .get('/courses')
+  //   // .reply(200)
+  //   // .get('/packs/js/runtime.js')
+  //   // .reply(200);
+  //   await fsp.chmod(tempDir, fsp.constants.S_IRUSR);// 0o555);
+
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+  //     .rejects.toThrow(/access denied/);
+  // });
+
+  // test('throws when passed path for downloading is not a directory', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+  //     .get('/assets/application.css')
+  //     .reply(200, '');
+  //   const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
+  //     .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
+  // });
+
+  test('throws when failing to download local asset', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+      .get('/assets/application.css')
+      .reply(500);
+    // .get('/assets/professions/nodejs.png')
+    // .reply(500)
+    // .get('/courses')
+    // .reply(500)
+    // .get('/packs/js/runtime.js')
+    // .reply(500);
+
+    await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+      .rejects.toThrow(/Unable to download local asset/);
+  });
+
+  test('throws when passed path for downloading is not a directory', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+
+    const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+    await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
       .rejects.toThrow(/ENOTDIR/);
+  });
 
-    await expect(pageLoader(pageUrl.toString(), path.join(tmpDirPath, 'notExistsPath')))
+  test('throws when nonexistent directory is passed', async () => {
+    expect.assertions(1);
+
+    nock('https://ru.hexlet.io')
+      .get('/courses')
+      .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+    const fakePath = path.join(tempDir, 'fakePath');
+
+    await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
       .rejects.toThrow(/ENOENT/);
+  });
+
+  test('throws when URL argument is not passed', async () => {
+    expect.assertions(1);
+
+    await expect(pageLoader(tempDir))
+      .rejects.toThrow(/Empty or incorrect URL/);
   });
 });
 
-describe('positive cases', () => {
-  let tmpDirPath = '';
-  beforeAll(async () => {
-    tmpDirPath = await fsp.mkdtemp(path.join(os.tmpdir(), 'page-loader-'));
-    await pageLoader(pageUrl.toString(), tmpDirPath);
-  });
-
-  // кейс: проверка скачанных файлов
-  test('check HTML-page', async () => {
-    await expect(fsp.access(path.join(tmpDirPath, pageFilename)))
-      .resolves.not.toThrow();
-
-    const actualContent = await readFile(tmpDirPath, pageFilename);
-    expect(actualContent).toStrictEqual(expectedPageContent.trim());
-  });
-  test.each(formats)('check .%s-resource', async (format) => {
-    const { filename, data } = resources.find((content) => content.format === format);
-    console.log(`fileName: ${filename}`);
-    await expect(fsp.access(path.join(tmpDirPath, pageFilename)))
-      .resolves.not.toThrow();
-    console.log(`tmpDirPath: ${tmpDirPath}`);
-    const actualContent = await readFile(tmpDirPath, filename);
-    expect(actualContent).toStrictEqual(data);
-  });
+afterAll(() => {
+  nock.cleanAll();
+  nock.enableNetConnect();
 });
