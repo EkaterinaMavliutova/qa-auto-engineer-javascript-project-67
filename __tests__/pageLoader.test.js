@@ -125,6 +125,51 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(/Oops, an error occurred connecting to/);
   });
 
+  // test('throws when nonexistent directory is passed', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+  //   const fakePath = path.join(tempDir, 'fakePath');
+
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', fakePath))
+  //     .rejects.toThrow(`Directory passed for downloading ${fakePath} is not exist.`);
+  // });
+
+  // test('throws when there is no write permission for the directory', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
+  //   // .get('/assets/application.css')
+  //   // .reply(200)
+  //   // .get('/assets/professions/nodejs.png')
+  //   // .reply(200)
+  //   // .get('/courses')
+  //   // .reply(200)
+  //   // .get('/packs/js/runtime.js')
+  //   // .reply(200);
+  //   await fsp.chmod(tempDir, fsp.constants.S_IRUSR);// 0o555);
+
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
+  //     .rejects.toThrow(/access denied/);
+  // });
+
+  // test('throws when passed path for downloading is not a directory', async () => {
+  //   expect.assertions(1);
+
+  //   nock('https://ru.hexlet.io')
+  //     .get('/courses')
+  //     .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
+  //     .get('/assets/application.css')
+  //     .reply(200, '');
+  //   const pathThatIsNotDir = getFixturePath('ru-hexlet-io-courses.html');
+  //   await expect(pageLoader('https://ru.hexlet.io/courses', pathThatIsNotDir))
+  //     .rejects.toThrow(`Passed path ${pathThatIsNotDir} for downloading is not a directory!`);
+  // });
+
   test('throws when failing to download local asset', async () => {
     expect.assertions(1);
     nock('https://ru.hexlet.io')
@@ -132,6 +177,12 @@ describe('pageLoader (negative scenarios)', () => {
       .reply(200, await readTestFile('ru-hexlet-io-courses.html'))
       .get('/assets/application.css')
       .reply(500);
+    // .get('/assets/professions/nodejs.png')
+    // .reply(500)
+    // .get('/courses')
+    // .reply(500)
+    // .get('/packs/js/runtime.js')
+    // .reply(500);
 
     await expect(pageLoader('https://ru.hexlet.io/courses', tempDir))
       .rejects.toThrow(/Unable to download local asset/);
