@@ -1,9 +1,14 @@
-import axios, { isAxiosError } from 'axios';
+import /* axios, */ { isAxiosError } from 'axios';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import * as cheerio from 'cheerio';
 import debug from 'debug';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+require('axios-debug-log');
+const axios = require('axios');
 
 const log = debug('page-loader');
 
@@ -81,7 +86,6 @@ const replaceLinks = (domObj, domElements, newLinks) => {
 };
 
 const pageLoader = async (link, saveToDir = process.cwd()) => {
-  log('pageLoader is now running!');
   if (!link) {
     throw new Error('Empty or incorrect URL');
   }
@@ -101,12 +105,14 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
   let mainUrl = '';
   try {
     mainUrl = new URL(link); // URL из ссылки в строке
+    log(`URL for downloading: ${mainUrl}`);
   } catch (err) {
     throw new Error(`Empty or incorrect URL% ${link}`);
   }
   const html = await getHTML(mainUrl); // html страницы
   const $ = cheerio.load(html); // объект cheerio (DOM)
   const $localAssets = getLocalAssets($, mainUrl); // элементы cheerio
+  log(`${$localAssets.length} locat assets were found on URL`);
   const dirForAssetsName = makeNameFromUrl(link, '_files');
   const pathToAssets = path.join(saveToDir, dirForAssetsName); // директория для локальных ресурсов
   try {
@@ -115,7 +121,9 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
     throw new Error(`Unable to create '${pathToAssets}', access denied`);
   }
   await fsp.mkdir(pathToAssets, { recursive: true });
+  log(`Directory for local assets was created: ${pathToAssets}`);
   const localAssetsUrls = getAbsoluteUrls($, $localAssets, mainUrl); // абсолютные ссылки
+  log(`Absolute URLs to local assets: ${localAssetsUrls.join(' ASSET: ')}`);
   const localAssetsNames = localAssetsUrls.map((item) => {
     const fileExt = path.parse(item).ext || '.html';
     const fileWithoutExt = item.replace(fileExt, '');
@@ -128,8 +136,11 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
     item,
     localAssetsNames[index],
   ))); // скачиваем ссылки в указанную директорию
+  log('Local assets were downloaded to the created directory');
   const newLinksToLocalAssets = localAssetsNames.map((item) => path.join(dirForAssetsName, item));
+  log(`Links to local assets in the created directory: ${newLinksToLocalAssets.join(' LINK: ')}`);
   replaceLinks($, $localAssets, newLinksToLocalAssets);
+  log('Links to local assets were replaced');
   const htmlFileName = makeNameFromUrl(link, '.html');
   const htmlFilePath = path.join(saveToDir, htmlFileName);
   await saveAsHtml(htmlFilePath, $.html());
@@ -140,6 +151,3 @@ const pageLoader = async (link, saveToDir = process.cwd()) => {
 // console.log(await pageLoader('https://sourcemaking.com', '/Users/ekaterinamavlutova/Desktop/test/testPathAccess'));
 
 export default pageLoader;
-// export default async () => {
-//   throw new Error('Unknown error');
-// };
