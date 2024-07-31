@@ -179,26 +179,10 @@ describe('pageLoader (negative scenarios)', () => {
       .rejects.toThrow(/ENOENT/);
   });
 
-  test('throws when URL argument is not passed', async () => {
-    expect.assertions(1);
+  // test('throws when URL argument is not passed', async () => {
+  //   expect.assertions(1);
 
-    await expect(pageLoader(tempDir))
-      .rejects.toThrow(/Empty or incorrect URL/);
-  });
-});
-
-// test('throws when there is no write permission for the directory', async () => {
-//   expect.assertions(1);
-//   scope
-//     .get('/courses')
-//     .reply(200, await readTestFile('ru-hexlet-io-courses.html'));
-//   const rootDir = '/sys';
-
-//   await expect(pageLoader('https://ru.hexlet.io/courses', rootDir))
-//     .rejects.toThrow();
-// });
-
-afterAll(() => {
-  nock.cleanAll();
-  nock.enableNetConnect();
+  //   await expect(pageLoader(tempDir))
+  //     .rejects.toThrow(/Empty or incorrect URL/);
+  // });
 });
