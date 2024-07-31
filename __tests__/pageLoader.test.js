@@ -35,12 +35,14 @@ const nockedRequests = [
 ];
 
 beforeEach(async () => {
-  try {
-    await removeTempDirs('page-loader-');
-    tempDir = await makeTempDir('page-loader-');
-  } catch (err) {
-    throw new Error(err);
-  }
+  await removeTempDirs('page-loader-');
+  tempDir = await makeTempDir('page-loader-');
+  // try {
+  //   await removeTempDirs('page-loader-');
+  //   tempDir = await makeTempDir('page-loader-');
+  // } catch (err) {
+  //   throw new Error(err);
+  // }
 });
 
 describe('pageLoader (positive scenarios)', () => {
@@ -72,6 +74,7 @@ describe('pageLoader (positive scenarios)', () => {
   });
 
   test('replaces links to local assets after downloading', async () => {
+    expect.assertions(1);
     const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
 
     expect(await fsp.readFile(result.filepath, 'utf-8'))
@@ -98,6 +101,7 @@ describe('pageLoader (positive scenarios)', () => {
   ])(
     'downloads local asset $expectedFile to the directory with \'_files\' suffix',
     async ({ downloadedLocalAsset, expectedFile }) => {
+      expect.assertions(1);
       const result = await pageLoader('https://ru.hexlet.io/courses', tempDir);
 
       const expectedLocalAssetsPath = result.filepath.replace('.html', '_files');
@@ -117,7 +121,6 @@ describe('pageLoader (negative scenarios)', () => {
     500,
   ])('throws when connecting to web page gets response code except for 2**: whith %d', async (responseCode) => {
     expect.assertions(1);
-
     // nock('https://ru.hexlet.io')
     scope
       .get('/courses')
@@ -129,7 +132,6 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when failing to connect to passed page', async () => {
     expect.assertions(1);
-
     // nock('https://ru.hexlet.io')
     scope
       .get('/fakePage')
@@ -141,7 +143,6 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when failing to download local asset', async () => {
     expect.assertions(1);
-
     // nock('https://ru.hexlet.io')
     scope
       .get('/courses')
@@ -155,7 +156,6 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when passed path for downloading is not a directory', async () => {
     expect.assertions(1);
-
     // nock('https://ru.hexlet.io')
     scope
       .get('/courses')
@@ -168,7 +168,6 @@ describe('pageLoader (negative scenarios)', () => {
 
   test('throws when nonexistent directory is passed', async () => {
     expect.assertions(1);
-
     // nock('https://ru.hexlet.io')
     scope
       .get('/courses')
