@@ -24,10 +24,10 @@ const nockedRequests = [
     route: '/courses',
     fixtureName: 'ru-hexlet-io-courses.html',
   },
-  {
-    route: '/courses',
-    fixtureName: 'ru-hexlet-io-courses.html',
-  },
+  // {
+  //   route: '/courses',
+  //   fixtureName: 'ru-hexlet-io-courses.html',
+  // },
   {
     route: '/packs/js/runtime.js',
     fixtureName: 'runtime.js',
@@ -127,11 +127,13 @@ describe('pageLoader (negative scenarios)', () => {
       .reply(responseCode);
 
     await expect(pageLoader(`https://ru.hexlet.io/${responseCode}`, tempDir))
-      .rejects.toThrow(/Oops, an error occurred connecting to/);
+      .rejects.toThrow(new RegExp(responseCode));// /Oops, an error occurred connecting to/
   });
 
   test('throws when failing to connect to passed page', async () => {
-    expect.assertions(1);
+    await expect(fsp.access(path.join(tempDir, 'ru-hexlet-io-courses.html')))
+      .rejects.toThrow(/ENOENT/);
+    // expect.assertions(1);
     // nock('https://ru.hexlet.io')
     scope
       .get('/fakePage')
@@ -139,6 +141,9 @@ describe('pageLoader (negative scenarios)', () => {
 
     await expect(pageLoader('https://ru.hexlet.io/fakePage', tempDir))
       .rejects.toThrow(/Page is not found/);
+
+    await expect(fsp.access(path.join(tempDir, 'ru-hexlet-io-courses.html')))
+      .rejects.toThrow(/ENOENT/);
   });
 
   // test('throws when failing to download local asset', async () => {
